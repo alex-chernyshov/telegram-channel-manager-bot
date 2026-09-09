@@ -42,9 +42,7 @@ def main() -> None:
     setup_logging(LOG_LEVEL)
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "-n", "--count", type=int, default=50, help="Number of messages to capture (default: 50)"
-    )
+    parser.add_argument("-n", "--count", type=int, default=50, help="Number of messages to capture (default: 50)")
     args = parser.parse_args()
 
     logger.info("Waiting for {} channel posts", args.count)

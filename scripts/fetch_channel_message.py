@@ -34,9 +34,7 @@ def parse_link(link: str) -> tuple[str, int]:
 
 
 async def fetch_message_text(bot: Bot, channel: str, message_id: int) -> str:
-    forwarded = await bot.forward_message(
-        chat_id=TELEGRAM_OWNER_CHAT_ID, from_chat_id=channel, message_id=message_id
-    )
+    forwarded = await bot.forward_message(chat_id=TELEGRAM_OWNER_CHAT_ID, from_chat_id=channel, message_id=message_id)
     return forwarded.text or forwarded.caption or ""
 
 
@@ -60,9 +58,7 @@ def main() -> None:
     setup_logging(LOG_LEVEL)
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "links", nargs="+", help="Telegram message link(s), e.g. https://t.me/channel/85"
-    )
+    parser.add_argument("links", nargs="+", help="Telegram message link(s), e.g. https://t.me/channel/85")
     args = parser.parse_args()
 
     texts = asyncio.run(fetch_all(args.links))

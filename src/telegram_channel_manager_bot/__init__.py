@@ -52,9 +52,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def post_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     logger.info("/post from user_id={}", update.effective_user.id)
-    await update.message.reply_text(
-        "Пришлите черновой текст поста, и я оформлю его в стиле канала."
-    )
+    await update.message.reply_text("Пришлите черновой текст поста, и я оформлю его в стиле канала.")
     return WAITING_FOR_DRAFT
 
 

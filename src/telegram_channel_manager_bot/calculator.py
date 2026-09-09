@@ -77,9 +77,7 @@ async def _get_products_file_id() -> str:
     global _products_file_id
     async with _products_file_lock:
         if _products_file_id is None:
-            uploaded = await openai_client.files.create(
-                file=PRODUCTS_TABLE_PATH.open("rb"), purpose="user_data"
-            )
+            uploaded = await openai_client.files.create(file=PRODUCTS_TABLE_PATH.open("rb"), purpose="user_data")
             _products_file_id = uploaded.id
             logger.info("Uploaded products table as file_id={}", _products_file_id)
     return _products_file_id
