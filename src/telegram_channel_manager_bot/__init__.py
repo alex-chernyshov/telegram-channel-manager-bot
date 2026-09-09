@@ -74,26 +74,26 @@ async def receive_draft(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
     await context.bot.send_message_draft(chat_id=chat_id, draft_id=draft_id, text="")
 
-    formatted_post, calculation = await asyncio.gather(
-        format_post_stream(raw_text, on_update),
-        calculate_calories(raw_text),
-        return_exceptions=True,
-    )
-
-    if isinstance(formatted_post, Exception):
-        logger.opt(exception=formatted_post).error(
-            "Failed to format draft for user_id={}", update.effective_user.id
-        )
+    calculation_task = asyncio.create_task(calculate_calories(raw_text))
+    try:
+        formatted_post = await format_post_stream(raw_text, on_update)
+    except Exception:  # noqa: BLE001 - report failure to the user instead of hanging the chat
+        calculation_task.cancel()
+        logger.exception("Failed to format draft for user_id={}", update.effective_user.id)
         await update.message.reply_text("Не получилось оформить пост, попробуйте ещё раз.")
         return ConversationHandler.END
 
-    if isinstance(calculation, Exception):
-        logger.opt(exception=calculation).error(
-            "Failed to calculate calories for user_id={}", update.effective_user.id
-        )
+    sent_message = await update.message.reply_text(formatted_post)
+
+    try:
+        calculation = await calculation_task
+    except Exception:  # noqa: BLE001 - fall back to placeholders instead of losing the post
+        logger.exception("Failed to calculate calories for user_id={}", update.effective_user.id)
         calculation = None
 
-    await update.message.reply_text(_apply_calculation(formatted_post, calculation))
+    final_post = _apply_calculation(formatted_post, calculation)
+    if final_post != formatted_post:
+        await sent_message.edit_text(final_post)
     return ConversationHandler.END
 
 
