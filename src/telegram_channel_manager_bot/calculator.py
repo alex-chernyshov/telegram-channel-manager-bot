@@ -5,7 +5,7 @@ from typing import Any
 
 from loguru import logger
 
-from telegram_channel_manager_bot.config import OPENAI_MODEL
+from telegram_channel_manager_bot.config import OPENAI_CALCULATOR_MODEL
 from telegram_channel_manager_bot.openai_client import openai_client
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
@@ -91,7 +91,7 @@ async def calculate_calories(raw_text: str) -> dict[str, Any]:
     file_id = await _get_products_file_id()
 
     response = await openai_client.responses.create(
-        model=OPENAI_MODEL,
+        model=OPENAI_CALCULATOR_MODEL,
         instructions=instructions,
         input=[
             {

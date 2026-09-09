@@ -3,7 +3,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from telegram_channel_manager_bot.config import OPENAI_MODEL
+from telegram_channel_manager_bot.config import OPENAI_FORMATTER_MODEL
 from telegram_channel_manager_bot.openai_client import openai_client
 
 STYLE_GUIDE_PATH = Path(__file__).resolve().parent.parent.parent / "prompts/style_guide.md"
@@ -31,13 +31,13 @@ SYSTEM_PROMPT_TEMPLATE = """# ЛИЧНОСТЬ
 
 
 async def format_post_stream(raw_text: str, on_update: Callable[[str], Awaitable[None]]) -> str:
-    logger.info("Formatting draft ({} chars) with model={}", len(raw_text), OPENAI_MODEL)
+    logger.info("Formatting draft ({} chars) with model={}", len(raw_text), OPENAI_FORMATTER_MODEL)
     style_guide = STYLE_GUIDE_PATH.read_text(encoding="utf-8")
     instructions = SYSTEM_PROMPT_TEMPLATE.format(style_guide=style_guide)
 
     accumulated = ""
     async with openai_client.responses.stream(
-        model=OPENAI_MODEL,
+        model=OPENAI_FORMATTER_MODEL,
         instructions=instructions,
         input=raw_text,
         reasoning={"effort": "medium"},
