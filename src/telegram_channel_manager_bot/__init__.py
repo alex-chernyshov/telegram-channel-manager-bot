@@ -3,6 +3,7 @@ import time
 
 from loguru import logger
 from telegram import BotCommand, Update
+from telegram.error import BadRequest, NetworkError
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -95,6 +96,16 @@ async def receive_draft(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     return ConversationHandler.END
 
 
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    error = context.error
+    # BadRequest is technically a NetworkError subclass in PTB, but it means we sent
+    # something Telegram rejected (our bug), not a transient network hiccup.
+    if isinstance(error, NetworkError) and not isinstance(error, BadRequest):
+        logger.warning("Transient Telegram API error: {}", error)
+    else:
+        logger.opt(exception=error).error("Unhandled error while processing update={}", update)
+
+
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     logger.info("/cancel from user_id={}", update.effective_user.id)
     await update.message.reply_text("Отменено.")
@@ -116,6 +127,7 @@ def main() -> None:
     logger.info("Starting bot")
 
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).post_init(post_init).build()
+    app.add_error_handler(error_handler)
     app.add_handler(CommandHandler("start", start))
     app.add_handler(
         ConversationHandler(
