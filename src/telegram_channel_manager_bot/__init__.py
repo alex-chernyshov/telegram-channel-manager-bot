@@ -14,7 +14,7 @@ from telegram.ext import (
 )
 
 from telegram_channel_manager_bot.calculator import calculate_calories
-from telegram_channel_manager_bot.config import LOG_LEVEL, TELEGRAM_BOT_TOKEN
+from telegram_channel_manager_bot.config import ENABLE_CALORIE_CALCULATION, LOG_LEVEL, TELEGRAM_BOT_TOKEN
 from telegram_channel_manager_bot.formatting import (
     CALORIES_PER_PORTION_PLACEHOLDER,
     CALORIES_PLACEHOLDER,
@@ -73,16 +73,20 @@ async def receive_draft(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
     await context.bot.send_message_draft(chat_id=chat_id, draft_id=draft_id, text="")
 
-    calculation_task = asyncio.create_task(calculate_calories(raw_text))
+    calculation_task = asyncio.create_task(calculate_calories(raw_text)) if ENABLE_CALORIE_CALCULATION else None
     try:
         formatted_post = await format_post_stream(raw_text, on_update)
     except Exception:  # noqa: BLE001 - report failure to the user instead of hanging the chat
-        calculation_task.cancel()
+        if calculation_task:
+            calculation_task.cancel()
         logger.exception("Failed to format draft for user_id={}", update.effective_user.id)
         await update.message.reply_text("Не получилось оформить пост, попробуйте ещё раз.")
         return ConversationHandler.END
 
     sent_message = await update.message.reply_text(formatted_post)
+
+    if calculation_task is None:
+        return ConversationHandler.END
 
     try:
         calculation = await calculation_task
