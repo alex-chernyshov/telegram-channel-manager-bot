@@ -74,11 +74,25 @@ Fill in real values:
 
 ```
 TELEGRAM_BOT_TOKEN=<token from @BotFather>
-TELEGRAM_OWNER_CHAT_ID=<your Telegram chat id>
+TELEGRAM_ADMIN_CHAT_ID=<your Telegram user id>
+TELEGRAM_CHANNEL_ID=<channel id, e.g. -1004325241527>
 OPENAI_API_KEY=<your OpenAI API key>
-OPENAI_MODEL=gpt-4o-mini
+OPENAI_FORMATTER_MODEL=gpt-5-mini
+OPENAI_CALCULATOR_MODEL=gpt-5-mini
+OPENAI_PRODUCTS_FILE_ID=<file id of the uploaded prompts/products.md>
+OPENAI_FAQ_CLASSIFIER_MODEL=gpt-5-nano
+OPENAI_FAQ_ANSWER_MODEL=gpt-6.1-sol
+FAQ_DB_PATH=data/faq.sqlite3
 LOG_LEVEL=INFO
+ENABLE_CALORIE_CALCULATION=false
+ENABLE_FAQ_ANSWERS=false
 ```
+
+`TELEGRAM_ADMIN_CHAT_ID` receives the FAQ approval cards and is the only user
+whose button taps are accepted. With `ENABLE_FAQ_ANSWERS=true` the bot must be a
+member of the channel's discussion group; it reads new comments there and, only
+after the admin approves, replies to matching questions from `prompts/often_q_a.md`.
+Its SQLite queue lives in `data/` (mounted as a volume, so it survives rebuilds).
 
 ### 7. Build and start the bot
 

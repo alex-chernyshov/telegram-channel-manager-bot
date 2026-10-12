@@ -15,3 +15,9 @@ wheels/
 
 # Channel dumps
 dumps/*.txt
+
+# FAQ database
+data/
+
+# Docs
+docs/
