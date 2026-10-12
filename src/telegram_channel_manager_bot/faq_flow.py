@@ -74,8 +74,8 @@ def _skip_reason(message: Message, group_id: int) -> str | None:
             return "sent on behalf of the channel or the group"
     elif message.from_user is None or message.from_user.is_bot:
         return "sent by a bot"
-    # elif message.from_user.id == TELEGRAM_ADMIN_CHAT_ID:
-    #     return "sent by the admin"
+    elif message.from_user.id == TELEGRAM_ADMIN_CHAT_ID:
+        return "sent by the admin"
     return None
 
 
