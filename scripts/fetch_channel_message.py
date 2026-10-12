@@ -2,7 +2,7 @@
 dumps their text to a .txt file.
 
 Run manually on demand (not part of the bot runtime). Works by forwarding each
-message to a private chat with the bot owner (TELEGRAM_OWNER_CHAT_ID) and
+message to a private chat with the bot admin (TELEGRAM_ADMIN_CHAT_ID) and
 reading its text back — Telegram's Bot API has no direct "get message" call.
 """
 
@@ -17,8 +17,8 @@ from telegram import Bot
 
 from telegram_channel_manager_bot.config import (
     LOG_LEVEL,
+    TELEGRAM_ADMIN_CHAT_ID,
     TELEGRAM_BOT_TOKEN,
-    TELEGRAM_OWNER_CHAT_ID,
 )
 from telegram_channel_manager_bot.logging_config import setup_logging
 
@@ -34,7 +34,7 @@ def parse_link(link: str) -> tuple[str, int]:
 
 
 async def fetch_message_text(bot: Bot, channel: str, message_id: int) -> str:
-    forwarded = await bot.forward_message(chat_id=TELEGRAM_OWNER_CHAT_ID, from_chat_id=channel, message_id=message_id)
+    forwarded = await bot.forward_message(chat_id=TELEGRAM_ADMIN_CHAT_ID, from_chat_id=channel, message_id=message_id)
     return forwarded.text or forwarded.caption or ""
 
 

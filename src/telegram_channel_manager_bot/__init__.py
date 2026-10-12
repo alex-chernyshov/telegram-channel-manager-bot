@@ -14,7 +14,13 @@ from telegram.ext import (
 )
 
 from telegram_channel_manager_bot.calculator import calculate_calories
-from telegram_channel_manager_bot.config import ENABLE_CALORIE_CALCULATION, LOG_LEVEL, TELEGRAM_BOT_TOKEN
+from telegram_channel_manager_bot.config import (
+    ENABLE_CALORIE_CALCULATION,
+    ENABLE_FAQ_ANSWERS,
+    LOG_LEVEL,
+    TELEGRAM_BOT_TOKEN,
+)
+from telegram_channel_manager_bot.faq_flow import setup_faq
 from telegram_channel_manager_bot.formatting import (
     CALORIES_PER_PORTION_PLACEHOLDER,
     CALORIES_PLACEHOLDER,
@@ -124,6 +130,8 @@ async def post_init(app: Application) -> None:
         ]
     )
     logger.info("Command menu registered")
+    if ENABLE_FAQ_ANSWERS:
+        await setup_faq(app)
 
 
 def main() -> None:
@@ -132,14 +140,14 @@ def main() -> None:
 
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).post_init(post_init).build()
     app.add_error_handler(error_handler)
-    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("start", start, filters=filters.ChatType.PRIVATE))
     app.add_handler(
         ConversationHandler(
-            entry_points=[CommandHandler("post", post_command)],
+            entry_points=[CommandHandler("post", post_command, filters=filters.ChatType.PRIVATE)],
             states={
                 WAITING_FOR_DRAFT: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_draft)],
             },
-            fallbacks=[CommandHandler("cancel", cancel)],
+            fallbacks=[CommandHandler("cancel", cancel, filters=filters.ChatType.PRIVATE)],
         )
     )
-    app.run_polling()
+    app.run_polling(allowed_updates=Update.ALL_TYPES)
