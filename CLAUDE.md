@@ -53,4 +53,4 @@ Logging uses `loguru` throughout (`logger.info(f"... {value}")` with f-strings, 
 
 ## Deployment
 
-Deployed with Docker Compose on a DigitalOcean Ubuntu droplet (step-by-step in README.md). The image runs `uv sync --frozen --no-dev`, so `uv.lock` must be kept in sync with `pyproject.toml`.
+Deployed with Docker Compose on a DigitalOcean Ubuntu droplet (step-by-step in README.md). The image runs `uv sync --frozen --no-dev`, so `uv.lock` must be kept in sync with `pyproject.toml`. Dev-only tools go in the `dev` dependency group. The container starts the venv entrypoint directly, not through `uv run`, because `uv run` re-syncs on start and would install the dev group.
