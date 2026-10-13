@@ -75,7 +75,7 @@ Fill in real values:
 ```
 TELEGRAM_BOT_TOKEN=<token from @BotFather>
 TELEGRAM_ADMIN_CHAT_ID=<your Telegram user id>
-TELEGRAM_CHANNEL_ID=<channel id, e.g. -1004325241527>
+TELEGRAM_CHANNEL_ID=<channel id>
 OPENAI_API_KEY=<your OpenAI API key>
 OPENAI_FORMATTER_MODEL=gpt-5-mini
 OPENAI_CALCULATOR_MODEL=gpt-5-mini
