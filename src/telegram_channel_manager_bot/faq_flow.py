@@ -173,6 +173,12 @@ async def _process_comment(bot: Bot, store: FaqStore, row: Mapping[str, Any]) ->
 
     entries = [faq[faq_id] for faq_id in faq_ids]
     answer = await generate_answer(text, language, entries, partial)
+    if answer is None:
+        if not text_changed() and store.transition(
+            row_id, STATUS_NEW, STATUS_SKIPPED, language=language, faq_ids=json.dumps(faq_ids)
+        ):
+            logger.info(f"Skipped comment id={row_id} message_id={message_id}: FAQ {faq_ids} doesn't answer it")
+        return
     logger.info(f"Generated answer for comment id={row_id} message_id={message_id} ({len(answer)} chars)")
 
     unknown_links = find_unknown_links(answer, entries)

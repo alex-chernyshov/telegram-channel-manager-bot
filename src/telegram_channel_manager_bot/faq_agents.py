@@ -32,6 +32,17 @@ CLASSIFICATION_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+# "answered" goes first so the model decides whether the FAQ covers the comment before writing the answer.
+ANSWER_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "answered": {"type": "boolean"},
+        "answer": {"type": "string"},
+    },
+    "required": ["answered", "answer"],
+    "additionalProperties": False,
+}
+
 
 def load_faq() -> dict[int, str]:
     """Parses the FAQ file into {id: entry text}. Text before the first entry (the title) is ignored."""
@@ -73,7 +84,8 @@ async def classify_comment(text: str, faq: dict[int, str]) -> dict[str, Any]:
     return result
 
 
-async def generate_answer(text: str, language: str, entries: list[str], partial: bool) -> str:
+async def generate_answer(text: str, language: str, entries: list[str], partial: bool) -> str | None:
+    """Returns the answer, or None when the matched entries don't answer the comment (a classifier false positive)."""
     instructions = ANSWER_PROMPT_PATH.read_text(encoding="utf-8")
     faq_block = "\n\n".join(entries)
     prompt_input = (
@@ -87,8 +99,19 @@ async def generate_answer(text: str, language: str, entries: list[str], partial:
         model=OPENAI_FAQ_ANSWER_MODEL,
         instructions=instructions,
         input=prompt_input,
+        text={
+            "format": {
+                "type": "json_schema",
+                "name": "faq_answer",
+                "schema": ANSWER_SCHEMA,
+                "strict": True,
+            }
+        },
     )
-    answer = response.output_text.strip()
+    result = parse_json_output(response)
+    if not result["answered"]:
+        return None
+    answer = result["answer"].strip()
     if not answer:
         raise ValueError("Answerer returned an empty answer")
     return answer
