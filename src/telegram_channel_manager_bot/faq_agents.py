@@ -1,4 +1,3 @@
-import json
 import re
 from pathlib import Path
 from typing import Any
@@ -6,7 +5,7 @@ from typing import Any
 from loguru import logger
 
 from telegram_channel_manager_bot.config import OPENAI_FAQ_ANSWER_MODEL, OPENAI_FAQ_CLASSIFIER_MODEL
-from telegram_channel_manager_bot.openai_client import openai_client
+from telegram_channel_manager_bot.openai_client import openai_client, parse_json_output
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 FAQ_PATH = ROOT_DIR / "prompts/often_q_a.md"
@@ -65,7 +64,7 @@ async def classify_comment(text: str, faq: dict[int, str]) -> dict[str, Any]:
             }
         },
     )
-    result: dict[str, Any] = json.loads(response.output_text)
+    result = parse_json_output(response)
 
     unknown_ids = [faq_id for faq_id in result["matched_faq_ids"] if faq_id not in faq]
     if unknown_ids:

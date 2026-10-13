@@ -1,11 +1,10 @@
-import json
 from pathlib import Path
 from typing import Any
 
 from loguru import logger
 
 from telegram_channel_manager_bot.config import OPENAI_CALCULATOR_MODEL, OPENAI_PRODUCTS_FILE_ID
-from telegram_channel_manager_bot.openai_client import openai_client
+from telegram_channel_manager_bot.openai_client import openai_client, parse_json_output
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 CALCULATOR_PROMPT_PATH = ROOT_DIR / "prompts/calculator_agent_prompt.md"
@@ -93,7 +92,7 @@ async def calculate_calories(raw_text: str) -> dict[str, Any]:
             }
         },
     )
-    result: dict[str, Any] = json.loads(response.output_text)
+    result = parse_json_output(response)
 
     logger.info(
         "Calculated {} kcal, {} (needs_review={})",

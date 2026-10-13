@@ -12,4 +12,4 @@ LOG_FORMAT = (
 
 def setup_logging(level: str = "INFO") -> None:
     logger.remove()
-    logger.add(sys.stderr, format=LOG_FORMAT, colorize=True, level=level)
+    logger.add(sys.stderr, format=LOG_FORMAT, colorize=True, level=level, diagnose=False)
