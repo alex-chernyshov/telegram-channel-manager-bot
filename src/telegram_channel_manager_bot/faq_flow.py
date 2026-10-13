@@ -128,7 +128,7 @@ async def ingest_comment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     reason = _skip_reason(message, context.bot_data[GROUP_ID_KEY]) or (None if text else "no text")
     if reason:
-        logger.info("Skipped group message_id={}: {}", message.message_id, reason)
+        logger.info(f"Skipped group message_id={message.message_id}: {reason}")
         return
 
     if message.sender_chat is not None:
@@ -140,9 +140,9 @@ async def ingest_comment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         message.chat_id, message.message_id, message.message_thread_id, author_id, author_name, text
     )
     if row_id is None:
-        logger.info("Duplicate comment message_id={}, already stored", message.message_id)
+        logger.info(f"Duplicate comment message_id={message.message_id}, already stored")
     else:
-        logger.info("Saved comment id={} message_id={} from {}", row_id, message.message_id, author_name)
+        logger.info(f"Saved comment id={row_id} message_id={message.message_id} from {author_name}")
 
 
 async def _process_comment(bot: Bot, store: FaqStore, row: Mapping[str, Any]) -> None:
@@ -152,7 +152,7 @@ async def _process_comment(bot: Bot, store: FaqStore, row: Mapping[str, Any]) ->
         # An edit may have updated the text while we were awaiting the LLM or Telegram.
         if store.get(row_id)["text"] == text:
             return False
-        logger.info("Comment id={} message_id={} was edited meanwhile, dropping this result", row_id, message_id)
+        logger.info(f"Comment id={row_id} message_id={message_id} was edited meanwhile, dropping this result")
         return True
 
     faq = load_faq()
@@ -163,29 +163,23 @@ async def _process_comment(bot: Bot, store: FaqStore, row: Mapping[str, Any]) ->
         classification["partial"],
     )
     logger.info(
-        "Classified comment id={} message_id={}: is_question={} faq_ids={} language={} partial={} reason={}",
-        row_id,
-        message_id,
-        classification["is_question"],
-        faq_ids,
-        language,
-        partial,
-        classification["reason"],
+        f"Classified comment id={row_id} message_id={message_id}: is_question={classification['is_question']}"
+        f" faq_ids={faq_ids} language={language} partial={partial} reason={classification['reason']}"
     )
     if not faq_ids or language not in SUPPORTED_LANGUAGES:
         if not text_changed() and store.transition(row_id, STATUS_NEW, STATUS_SKIPPED, language=language):
-            logger.info("Skipped comment id={} message_id={}", row_id, message_id)
+            logger.info(f"Skipped comment id={row_id} message_id={message_id}")
         return
 
     entries = [faq[faq_id] for faq_id in faq_ids]
     answer = await generate_answer(text, language, entries, partial)
-    logger.info("Generated answer for comment id={} message_id={} ({} chars)", row_id, message_id, len(answer))
+    logger.info(f"Generated answer for comment id={row_id} message_id={message_id} ({len(answer)} chars)")
 
     unknown_links = find_unknown_links(answer, entries)
     if unknown_links:
         error = f"link guard: {' '.join(unknown_links)}"
         store.transition(row_id, STATUS_NEW, STATUS_FAILED, last_error=error, answer=answer)
-        logger.error("Comment id={} message_id={} failed the {}", row_id, message_id, error)
+        logger.error(f"Comment id={row_id} message_id={message_id} failed the {error}")
         return
 
     if text_changed():
@@ -207,7 +201,7 @@ async def _process_comment(bot: Bot, store: FaqStore, row: Mapping[str, Any]) ->
         ),
     )
     fields["card_message_id"] = card.message_id
-    logger.info("Sent card for comment id={} message_id={}", row_id, message_id)
+    logger.info(f"Sent card for comment id={row_id} message_id={message_id}")
 
     # The card is out, so an edit that landed during the send is handled like an edit of a pending card.
     if text_changed():
@@ -215,7 +209,7 @@ async def _process_comment(bot: Bot, store: FaqStore, row: Mapping[str, Any]) ->
         await _show_outcome(bot, {**card_row, **fields}, OUTCOME_COMMENT_EDITED)
         return
     if not store.transition(row_id, STATUS_NEW, STATUS_PENDING_APPROVAL, **fields):
-        logger.warning("Comment id={} message_id={} left the new status unexpectedly", row_id, message_id)
+        logger.warning(f"Comment id={row_id} message_id={message_id} left the new status unexpectedly")
 
 
 async def process_new_comments(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -226,7 +220,7 @@ async def process_new_comments(context: ContextTypes.DEFAULT_TYPE) -> None:
         except Exception as error:  # noqa: BLE001 - one bad comment must not stop the batch; it is retried
             status = store.record_failure(row["id"], repr(error))
             logger.exception(
-                "Failed to process comment id={} message_id={}, status is now {}", row["id"], row["message_id"], status
+                f"Failed to process comment id={row['id']} message_id={row['message_id']}, status is now {status}"
             )
 
 
@@ -234,7 +228,7 @@ async def _decline(bot: Bot, store: FaqStore, row_id: int) -> str | None:
     if not store.transition(row_id, STATUS_PENDING_APPROVAL, STATUS_DECLINED):
         return TOAST_ALREADY_HANDLED
     row = store.get(row_id)
-    logger.info("Declined comment id={} message_id={}", row_id, row["message_id"])
+    logger.info(f"Declined comment id={row_id} message_id={row['message_id']}")
     await _show_outcome(bot, row, OUTCOME_DECLINED)
     return None
 
@@ -244,36 +238,35 @@ async def _approve(bot: Bot, store: FaqStore, row_id: int) -> str | None:
         return TOAST_ALREADY_HANDLED
     row = store.get(row_id)
     message_id = row["message_id"]
-    logger.info("Approved comment id={} message_id={}, posting the reply", row_id, message_id)
+    logger.info(f"Approved comment id={row_id} message_id={message_id}, posting the reply")
 
     try:
         reply = await _post_reply(bot, row)
     except BadRequest as error:
         if REPLY_TARGET_MISSING in error.message.lower():
             store.transition(row_id, STATUS_APPROVING, STATUS_COMMENT_DELETED, last_error=error.message)
-            logger.warning("Comment id={} message_id={} was deleted, reply not posted", row_id, message_id)
+            logger.warning(f"Comment id={row_id} message_id={message_id} was deleted, reply not posted")
             await _show_outcome(bot, row, OUTCOME_COMMENT_DELETED)
         else:
             store.transition(row_id, STATUS_APPROVING, STATUS_FAILED, last_error=error.message)
-            logger.error("Failed to post reply for comment id={} message_id={}: {}", row_id, message_id, error)
+            logger.error(f"Failed to post reply for comment id={row_id} message_id={message_id}: {error}")
             await _show_outcome(bot, row, OUTCOME_SEND_FAILED)
         return None
     except TimedOut:
         # The reply may have been posted anyway, so it stays in approving, like a crash mid-send.
         logger.warning(
-            "Timed out posting reply for comment id={} message_id={}, left in approving: check manually",
-            row_id,
-            message_id,
+            f"Timed out posting reply for comment id={row_id} message_id={message_id},"
+            " left in approving: check manually"
         )
         await _show_outcome(bot, row, OUTCOME_SEND_UNCONFIRMED)
         return None
     except NetworkError as error:
         store.transition(row_id, STATUS_APPROVING, STATUS_PENDING_APPROVAL, last_error=str(error))
-        logger.warning("Network error posting reply for comment id={} message_id={}: {}", row_id, message_id, error)
+        logger.warning(f"Network error posting reply for comment id={row_id} message_id={message_id}: {error}")
         return TOAST_RETRY
 
     store.transition(row_id, STATUS_APPROVING, STATUS_POSTED, reply_message_id=reply.message_id)
-    logger.info("Posted reply message_id={} for comment id={} message_id={}", reply.message_id, row_id, message_id)
+    logger.info(f"Posted reply message_id={reply.message_id} for comment id={row_id} message_id={message_id}")
     reply_link = _message_link(row["chat_id"], reply.message_id, row["thread_id"])
     await _show_outcome(bot, row, OUTCOME_POSTED.format(link=reply_link))
     return None
@@ -282,7 +275,7 @@ async def _approve(bot: Bot, store: FaqStore, row_id: int) -> str | None:
 async def on_card_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     if query.from_user.id != TELEGRAM_ADMIN_CHAT_ID:
-        logger.warning("Ignored FAQ button {} from non-admin user_id={}", query.data, query.from_user.id)
+        logger.warning(f"Ignored FAQ button {query.data} from non-admin user_id={query.from_user.id}")
         await query.answer()
         return
 
@@ -306,24 +299,22 @@ async def on_comment_edited(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     store: FaqStore = context.bot_data[STORE_KEY]
     row = store.get_by_message(message.chat_id, message.message_id)
     if row is None:
-        logger.info("Edit of untracked message_id={}, ignoring", message.message_id)
+        logger.info(f"Edit of untracked message_id={message.message_id}, ignoring")
         return
     row_id, text = row["id"], _message_text(message)
     if text == row["text"]:
-        logger.info("Edit of comment id={} message_id={} kept the text, ignoring", row_id, message.message_id)
+        logger.info(f"Edit of comment id={row_id} message_id={message.message_id} kept the text, ignoring")
         return
 
     if row["status"] == STATUS_NEW and store.update_new_text(row_id, text):
-        logger.info("Updated text of new comment id={} message_id={}", row_id, message.message_id)
+        logger.info(f"Updated text of new comment id={row_id} message_id={message.message_id}")
     elif row["status"] == STATUS_PENDING_APPROVAL and store.transition(
         row_id, STATUS_PENDING_APPROVAL, STATUS_COMMENT_EDITED
     ):
-        logger.info("Comment id={} message_id={} edited while awaiting approval", row_id, message.message_id)
+        logger.info(f"Comment id={row_id} message_id={message.message_id} edited while awaiting approval")
         await _show_outcome(context.bot, row, OUTCOME_COMMENT_EDITED)
     else:
-        logger.info(
-            "Edit of comment id={} message_id={} in status {}, ignoring", row_id, message.message_id, row["status"]
-        )
+        logger.info(f"Edit of comment id={row_id} message_id={message.message_id} in status {row['status']}, ignoring")
 
 
 async def setup_faq(app: Application) -> None:
@@ -331,19 +322,18 @@ async def setup_faq(app: Application) -> None:
     try:
         channel = await app.bot.get_chat(TELEGRAM_CHANNEL_ID)
     except TelegramError:
-        logger.exception("Failed to get channel {}, FAQ answers disabled", TELEGRAM_CHANNEL_ID)
+        logger.exception(f"Failed to get channel {TELEGRAM_CHANNEL_ID}, FAQ answers disabled")
         return
     group_id = channel.linked_chat_id
     if group_id is None:
-        logger.error("Channel {} has no linked discussion group, FAQ answers disabled", TELEGRAM_CHANNEL_ID)
+        logger.error(f"Channel {TELEGRAM_CHANNEL_ID} has no linked discussion group, FAQ answers disabled")
         return
 
     store = FaqStore(ROOT_DIR / FAQ_DB_PATH)
     for row in store.list_by_status(STATUS_APPROVING):
         logger.warning(
-            "Comment id={} message_id={} is stuck in approving: the reply may have been posted, check manually",
-            row["id"],
-            row["message_id"],
+            f"Comment id={row['id']} message_id={row['message_id']} is stuck in approving:"
+            " the reply may have been posted, check manually"
         )
     app.bot_data[STORE_KEY] = store
     app.bot_data[GROUP_ID_KEY] = group_id
@@ -355,4 +345,4 @@ async def setup_faq(app: Application) -> None:
     )
     app.add_handler(CallbackQueryHandler(on_card_button, pattern=CALLBACK_PATTERN), group=FAQ_HANDLER_GROUP)
     app.job_queue.run_repeating(process_new_comments, interval=WORKER_INTERVAL_SECONDS, first=WORKER_FIRST_RUN_SECONDS)
-    logger.info("FAQ answers enabled for channel {} and discussion group {}", TELEGRAM_CHANNEL_ID, group_id)
+    logger.info(f"FAQ answers enabled for channel {TELEGRAM_CHANNEL_ID} and discussion group {group_id}")

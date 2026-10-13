@@ -31,7 +31,7 @@ SYSTEM_PROMPT_TEMPLATE = """# ЛИЧНОСТЬ
 
 
 async def format_post_stream(raw_text: str, on_update: Callable[[str], Awaitable[None]]) -> str:
-    logger.info("Formatting draft ({} chars) with model={}", len(raw_text), OPENAI_FORMATTER_MODEL)
+    logger.info(f"Formatting draft ({len(raw_text)} chars) with model={OPENAI_FORMATTER_MODEL}")
     style_guide = STYLE_GUIDE_PATH.read_text(encoding="utf-8")
     instructions = SYSTEM_PROMPT_TEMPLATE.format(style_guide=style_guide)
 
@@ -47,5 +47,5 @@ async def format_post_stream(raw_text: str, on_update: Callable[[str], Awaitable
                 accumulated += event.delta
                 await on_update(accumulated)
 
-    logger.info("Formatted post ready ({} chars)", len(accumulated))
+    logger.info(f"Formatted post ready ({len(accumulated)} chars)")
     return accumulated

@@ -49,7 +49,7 @@ After both finish, `_apply_calculation` substitutes the numbers into the formatt
 
 **FAQ file contract:** each entry in `often_q_a.md` starts with a line matching `^\d+\.\s`, and that number is its stable ID (shown on cards, used by the classifier). The entry runs until the next such line, so a line inside an answer must not start with `N. `. Text before the first entry is ignored. The file and both FAQ prompts (`faq_classifier_prompt.md`, `faq_answer_prompt.md`) are read from disk on every call.
 
-Logging uses `loguru` throughout (`logger.info("... {}", value)` with brace formatting, not f-strings), configured by `setup_logging`.
+Logging uses `loguru` throughout (`logger.info(f"... {value}")` with f-strings, not loguru's `"{}", value` brace formatting), configured by `setup_logging`. Never pass extra args or kwargs alongside an f-string message: loguru would then call `.format()` on it, and braces in user text (comments, drafts) would break it.
 
 ## Deployment
 

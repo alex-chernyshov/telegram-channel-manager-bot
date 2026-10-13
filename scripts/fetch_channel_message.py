@@ -47,9 +47,9 @@ async def fetch_all(links: list[str]) -> list[str]:
                 channel, message_id = parse_link(link)
                 text = await fetch_message_text(bot, channel, message_id)
             except Exception:  # noqa: BLE001 - one bad link shouldn't abort the whole batch
-                logger.exception("Failed to fetch {}, skipping", link)
+                logger.exception(f"Failed to fetch {link}, skipping")
                 continue
-            logger.info("Fetched {} ({} chars)", link, len(text))
+            logger.info(f"Fetched {link} ({len(text)} chars)")
             texts.append(text)
     return texts
 
@@ -66,7 +66,7 @@ def main() -> None:
     DUMPS_DIR.mkdir(exist_ok=True)
     output_file = DUMPS_DIR / f"fetched_{datetime.now(UTC):%Y%m%d_%H%M%S}.txt"
     output_file.write_text("\n\n".join(texts), encoding="utf-8")
-    logger.success("Wrote {} messages to {}", len(texts), output_file)
+    logger.success(f"Wrote {len(texts)} messages to {output_file}")
 
 
 if __name__ == "__main__":

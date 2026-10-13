@@ -28,12 +28,12 @@ async def on_channel_post(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     text = message.text or message.caption or ""
     if not text:
-        logger.debug("Skipped channel post {} with no text/caption", message.message_id)
+        logger.debug(f"Skipped channel post {message.message_id} with no text/caption")
         return
 
     context.bot_data["messages"].append(text)
     captured, target = len(context.bot_data["messages"]), context.bot_data["target"]
-    logger.info("Captured message {}/{}", captured, target)
+    logger.info(f"Captured message {captured}/{target}")
     if captured >= target:
         context.application.stop_running()
 
@@ -45,7 +45,7 @@ def main() -> None:
     parser.add_argument("-n", "--count", type=int, default=50, help="Number of messages to capture (default: 50)")
     args = parser.parse_args()
 
-    logger.info("Waiting for {} channel posts", args.count)
+    logger.info(f"Waiting for {args.count} channel posts")
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
     app.bot_data["messages"] = []
     app.bot_data["target"] = args.count
@@ -56,7 +56,7 @@ def main() -> None:
     output_file = DUMPS_DIR / f"channel_dump_{datetime.now(UTC):%Y%m%d_%H%M%S}.txt"
     messages = reversed(app.bot_data["messages"])
     output_file.write_text("\n\n".join(messages), encoding="utf-8")
-    logger.success("Wrote {} messages to {}", len(app.bot_data["messages"]), output_file)
+    logger.success(f"Wrote {len(app.bot_data['messages'])} messages to {output_file}")
 
 
 if __name__ == "__main__":

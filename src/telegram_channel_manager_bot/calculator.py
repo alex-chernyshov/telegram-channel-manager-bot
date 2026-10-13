@@ -68,7 +68,7 @@ CALCULATION_SCHEMA: dict[str, Any] = {
 
 
 async def calculate_calories(raw_text: str) -> dict[str, Any]:
-    logger.info("Calculating calories for draft ({} chars)", len(raw_text))
+    logger.info(f"Calculating calories for draft ({len(raw_text)} chars)")
     instructions = CALCULATOR_PROMPT_PATH.read_text(encoding="utf-8")
 
     response = await openai_client.responses.create(
@@ -95,11 +95,8 @@ async def calculate_calories(raw_text: str) -> dict[str, Any]:
     result = parse_json_output(response)
 
     logger.info(
-        "Calculated {} kcal, {} (needs_review={})",
-        result["calories_total"],
-        result["macros_total"],
-        result["needs_review"],
+        f"Calculated {result['calories_total']} kcal, {result['macros_total']} (needs_review={result['needs_review']})"
     )
     if result["unmatched"]:
-        logger.warning("Unmatched ingredients: {}", result["unmatched"])
+        logger.warning(f"Unmatched ingredients: {result['unmatched']}")
     return result

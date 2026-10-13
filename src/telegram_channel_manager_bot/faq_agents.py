@@ -41,7 +41,7 @@ def load_faq() -> dict[int, str]:
     for start, next_start in zip(starts, [*starts[1:], None], strict=True):
         faq_id = int(start[1])
         if faq_id in entries:
-            logger.error("Duplicate FAQ id {} in {}, keeping the first entry", faq_id, FAQ_PATH)
+            logger.error(f"Duplicate FAQ id {faq_id} in {FAQ_PATH}, keeping the first entry")
             continue
         entries[faq_id] = text[start.start() : next_start.start() if next_start else len(text)].strip()
     return entries
@@ -68,7 +68,7 @@ async def classify_comment(text: str, faq: dict[int, str]) -> dict[str, Any]:
 
     unknown_ids = [faq_id for faq_id in result["matched_faq_ids"] if faq_id not in faq]
     if unknown_ids:
-        logger.warning("Classifier returned unknown FAQ ids {}, dropping them", unknown_ids)
+        logger.warning(f"Classifier returned unknown FAQ ids {unknown_ids}, dropping them")
     result["matched_faq_ids"] = [faq_id for faq_id in dict.fromkeys(result["matched_faq_ids"]) if faq_id in faq]
     return result
 

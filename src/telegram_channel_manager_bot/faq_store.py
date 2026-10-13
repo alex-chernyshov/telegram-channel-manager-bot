@@ -54,7 +54,7 @@ class FaqStore:
         self._conn = sqlite3.connect(path, autocommit=True)
         self._conn.row_factory = sqlite3.Row
         self._conn.execute(SCHEMA)
-        logger.info("FAQ store opened at {}", path)
+        logger.info(f"FAQ store opened at {path}")
 
     def insert_new(
         self, chat_id: int, message_id: int, thread_id: int, author_id: int | None, author_name: str, text: str

@@ -53,12 +53,12 @@ def _apply_calculation(post: str, calculation: dict | None) -> str:
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.info("/start from user_id={}", update.effective_user.id)
+    logger.info(f"/start from user_id={update.effective_user.id}")
     await update.message.reply_text("Bot is up and running.")
 
 
 async def post_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    logger.info("/post from user_id={}", update.effective_user.id)
+    logger.info(f"/post from user_id={update.effective_user.id}")
     await update.message.reply_text("Пришлите черновой текст поста, и я оформлю его в стиле канала.")
     return WAITING_FOR_DRAFT
 
@@ -85,7 +85,7 @@ async def receive_draft(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     except Exception:  # noqa: BLE001 - report failure to the user instead of hanging the chat
         if calculation_task:
             calculation_task.cancel()
-        logger.exception("Failed to format draft for user_id={}", update.effective_user.id)
+        logger.exception(f"Failed to format draft for user_id={update.effective_user.id}")
         await update.message.reply_text("Не получилось оформить пост, попробуйте ещё раз.")
         return ConversationHandler.END
 
@@ -97,7 +97,7 @@ async def receive_draft(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     try:
         calculation = await calculation_task
     except Exception:  # noqa: BLE001 - fall back to placeholders instead of losing the post
-        logger.exception("Failed to calculate calories for user_id={}", update.effective_user.id)
+        logger.exception(f"Failed to calculate calories for user_id={update.effective_user.id}")
         calculation = None
 
     final_post = _apply_calculation(formatted_post, calculation)
@@ -111,13 +111,13 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
     # BadRequest is technically a NetworkError subclass in PTB, but it means we sent
     # something Telegram rejected (our bug), not a transient network hiccup.
     if isinstance(error, NetworkError) and not isinstance(error, BadRequest):
-        logger.warning("Transient Telegram API error: {}", error)
+        logger.warning(f"Transient Telegram API error: {error}")
     else:
-        logger.opt(exception=error).error("Unhandled error while processing update={}", update)
+        logger.opt(exception=error).error(f"Unhandled error while processing update={update}")
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    logger.info("/cancel from user_id={}", update.effective_user.id)
+    logger.info(f"/cancel from user_id={update.effective_user.id}")
     await update.message.reply_text("Отменено.")
     return ConversationHandler.END
 

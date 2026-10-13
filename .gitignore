@@ -17,7 +17,7 @@ wheels/
 dumps/*.txt
 
 # FAQ database
-data/
+data/*.sqlite3
 
 # Docs
-docs/
+docs/*.md

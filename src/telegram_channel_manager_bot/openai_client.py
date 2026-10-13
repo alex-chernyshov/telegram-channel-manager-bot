@@ -29,6 +29,6 @@ def parse_json_output(response: Response) -> dict[str, Any]:
     if not texts:
         raise ValueError(f"Response {response.id} has no output_text")
     if len(texts) > 1:
-        logger.warning("Response {} has {} output_text blocks, using the first", response.id, len(texts))
+        logger.warning(f"Response {response.id} has {len(texts)} output_text blocks, using the first")
     result: dict[str, Any] = json.loads(texts[0])
     return result
