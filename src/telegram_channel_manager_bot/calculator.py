@@ -91,6 +91,7 @@ async def calculate_calories(raw_text: str) -> dict[str, Any]:
                 "strict": True,
             }
         },
+        langsmith_extra={"name": "Calorie Calculator"},
     )
     result = parse_json_output(response)
 

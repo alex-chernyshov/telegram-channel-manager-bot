@@ -74,6 +74,7 @@ async def classify_comment(text: str, faq: dict[int, str]) -> dict[str, Any]:
                 "strict": True,
             }
         },
+        langsmith_extra={"name": "FAQ Classifier"},
     )
     result = parse_json_output(response)
 
@@ -107,6 +108,7 @@ async def generate_answer(text: str, language: str, entries: list[str], partial:
                 "strict": True,
             }
         },
+        langsmith_extra={"name": "FAQ Answer"},
     )
     result = parse_json_output(response)
     if not result["answered"]:

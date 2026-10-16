@@ -36,12 +36,15 @@ async def format_post_stream(raw_text: str, on_update: Callable[[str], Awaitable
     instructions = SYSTEM_PROMPT_TEMPLATE.format(style_guide=style_guide)
 
     accumulated = ""
-    async with openai_client.responses.stream(
+    stream = await openai_client.responses.create(
         model=OPENAI_FORMATTER_MODEL,
         instructions=instructions,
         input=raw_text,
         reasoning={"effort": "medium"},
-    ) as stream:
+        stream=True,
+        langsmith_extra={"name": "Formatter"},
+    )
+    async with stream:
         async for event in stream:
             if event.type == "response.output_text.delta":
                 accumulated += event.delta
